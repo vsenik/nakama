@@ -25,7 +25,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func RuntimeBeforeHook(runtime *Runtime, jsonpbMarshaler *jsonpb.Marshaler, jsonpbUnmarshaler *jsonpb.Unmarshaler, messageType string, envelope *Envelope, session *session) (*Envelope, error) {
+func RuntimeBeforeHook(runtime *Runtime, jsonpbMarshaler *jsonpb.Marshaler, jsonpbUnmarshaler *jsonpb.Unmarshaler, messageType string, envelope *Envelope, session session) (*Envelope, error) {
 	fn := runtime.GetRuntimeCallback(BEFORE, messageType)
 	if fn == nil {
 		return envelope, nil
@@ -35,15 +35,15 @@ func RuntimeBeforeHook(runtime *Runtime, jsonpbMarshaler *jsonpb.Marshaler, json
 	handle := ""
 	expiry := int64(0)
 	if session != nil {
-		userId = session.userID
-		handle = session.handle.Load()
-		expiry = session.expiry
+		userId = session.UserID()
+		handle = session.Handle()
+		expiry = session.Expiry()
 	}
 
 	return runtime.InvokeFunctionBefore(fn, userId, handle, expiry, jsonpbMarshaler, jsonpbUnmarshaler, envelope)
 }
 
-func RuntimeAfterHook(logger *zap.Logger, runtime *Runtime, jsonpbMarshaler *jsonpb.Marshaler, messageType string, envelope *Envelope, session *session) {
+func RuntimeAfterHook(logger *zap.Logger, runtime *Runtime, jsonpbMarshaler *jsonpb.Marshaler, messageType string, envelope *Envelope, session session) {
 	fn := runtime.GetRuntimeCallback(AFTER, messageType)
 	if fn == nil {
 		return
@@ -65,9 +65,9 @@ func RuntimeAfterHook(logger *zap.Logger, runtime *Runtime, jsonpbMarshaler *jso
 	handle := ""
 	expiry := int64(0)
 	if session != nil {
-		userId = session.userID
-		handle = session.handle.Load()
-		expiry = session.expiry
+		userId = session.UserID()
+		handle = session.Handle()
+		expiry = session.Expiry()
 	}
 
 	if fnErr := runtime.InvokeFunctionAfter(fn, userId, handle, expiry, jsonEnvelope); fnErr != nil {
