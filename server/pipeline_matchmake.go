@@ -24,7 +24,7 @@ import (
 func (p *pipeline) matchmakeAdd(logger *zap.Logger, session session, envelope *Envelope) {
 	requiredCount := envelope.GetMatchmakeAdd().RequiredCount
 	if requiredCount < 2 {
-		session.Send(ErrorMessageBadInput(envelope.CollationId, "Required count must be >= 2"))
+		session.Send(ErrorMessageBadInput(envelope.CollationId, "Required count must be >= 2"), true)
 		return
 	}
 
@@ -32,7 +32,7 @@ func (p *pipeline) matchmakeAdd(logger *zap.Logger, session session, envelope *E
 
 	session.Send(&Envelope{CollationId: envelope.CollationId, Payload: &Envelope_MatchmakeTicket{MatchmakeTicket: &TMatchmakeTicket{
 		Ticket: ticket.Bytes(),
-	}}})
+	}}}, true)
 
 	if selected == nil {
 		return
@@ -76,7 +76,7 @@ func (p *pipeline) matchmakeAdd(logger *zap.Logger, session session, envelope *E
 			SessionId: mk.ID.SessionID.Bytes(),
 			Handle:    mp.Meta.Handle,
 		}
-		p.messageRouter.Send(logger, to, outgoing)
+		p.messageRouter.Send(logger, to, outgoing, true)
 	}
 }
 
@@ -84,15 +84,15 @@ func (p *pipeline) matchmakeRemove(logger *zap.Logger, session session, envelope
 	ticketBytes := envelope.GetMatchmakeRemove().Ticket
 	ticket, err := uuid.FromBytes(ticketBytes)
 	if err != nil {
-		session.Send(ErrorMessageBadInput(envelope.CollationId, "Invalid ticket"))
+		session.Send(ErrorMessageBadInput(envelope.CollationId, "Invalid ticket"), true)
 		return
 	}
 
 	err = p.matchmaker.Remove(session.ID(), session.UserID(), ticket)
 	if err != nil {
-		session.Send(ErrorMessageBadInput(envelope.CollationId, "Ticket not found, matchmaking may already be done"))
+		session.Send(ErrorMessageBadInput(envelope.CollationId, "Ticket not found, matchmaking may already be done"), true)
 		return
 	}
 
-	session.Send(&Envelope{CollationId: envelope.CollationId})
+	session.Send(&Envelope{CollationId: envelope.CollationId}, true)
 }

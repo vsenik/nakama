@@ -23,13 +23,13 @@ import (
 func (p *pipeline) rpc(logger *zap.Logger, session session, envelope *Envelope) {
 	rpcMessage := envelope.GetRpc()
 	if rpcMessage.Id == "" {
-		session.Send(ErrorMessageBadInput(envelope.CollationId, "RPC ID must be set"))
+		session.Send(ErrorMessageBadInput(envelope.CollationId, "RPC ID must be set"), true)
 		return
 	}
 
 	lf := p.runtime.GetRuntimeCallback(RPC, rpcMessage.Id)
 	if lf == nil {
-		session.Send(ErrorMessage(envelope.CollationId, RUNTIME_FUNCTION_NOT_FOUND, "RPC function not found"))
+		session.Send(ErrorMessage(envelope.CollationId, RUNTIME_FUNCTION_NOT_FOUND, "RPC function not found"), true)
 		return
 	}
 
@@ -47,12 +47,12 @@ func (p *pipeline) rpc(logger *zap.Logger, session session, envelope *Envelope) 
 					msg = msgParts[0]
 				}
 			}
-			session.Send(ErrorMessage(envelope.CollationId, RUNTIME_FUNCTION_EXCEPTION, msg))
+			session.Send(ErrorMessage(envelope.CollationId, RUNTIME_FUNCTION_EXCEPTION, msg), true)
 		} else {
-			session.Send(ErrorMessage(envelope.CollationId, RUNTIME_FUNCTION_EXCEPTION, fnErr.Error()))
+			session.Send(ErrorMessage(envelope.CollationId, RUNTIME_FUNCTION_EXCEPTION, fnErr.Error()), true)
 		}
 		return
 	}
 
-	session.Send(&Envelope{CollationId: envelope.CollationId, Payload: &Envelope_Rpc{Rpc: &TRpc{Id: rpcMessage.Id, Payload: result}}})
+	session.Send(&Envelope{CollationId: envelope.CollationId, Payload: &Envelope_Rpc{Rpc: &TRpc{Id: rpcMessage.Id, Payload: result}}}, true)
 }
